@@ -20,11 +20,43 @@ const numberFormatter = new Intl.NumberFormat('fr-CA', {
   maximumFractionDigits: 6,
 });
 
+const comparisonFormatter = new Intl.NumberFormat('fr-CA', {
+  maximumFractionDigits: 2,
+});
+
+const sizeReferences = [
+  { name: 'un grain de riz', meters: 0.007, emoji: '🍚', dimension: 'longueur' },
+  { name: 'une carte bancaire', meters: 0.086, emoji: '💳', dimension: 'longueur' },
+  { name: 'un téléphone intelligent', meters: 0.15, emoji: '📱', dimension: 'hauteur' },
+  { name: "une bouteille d'eau", meters: 0.25, emoji: '🧴', dimension: 'hauteur' },
+  { name: 'un chat domestique', meters: 0.46, emoji: '🐈', dimension: 'hauteur' },
+  { name: 'une chaise', meters: 0.9, emoji: '🪑', dimension: 'hauteur' },
+  { name: 'une porte standard', meters: 2.03, emoji: '🚪', dimension: 'hauteur' },
+  { name: 'une voiture', meters: 4.5, emoji: '🚗', dimension: 'longueur' },
+  { name: 'une girafe adulte', meters: 5.5, emoji: '🦒', dimension: 'hauteur' },
+  { name: 'un autobus urbain', meters: 12, emoji: '🚌', dimension: 'longueur' },
+  { name: 'une piscine semi-olympique', meters: 25, emoji: '🏊', dimension: 'longueur' },
+  { name: 'un avion de ligne', meters: 73, emoji: '✈️', dimension: 'longueur' },
+  { name: 'la statue de la Liberté', meters: 93, emoji: '🗽', dimension: 'hauteur' },
+  { name: 'la tour Eiffel', meters: 330, emoji: '🗼', dimension: 'hauteur' },
+];
+
+function findClosestObject(meters) {
+  if (meters <= 0) return null;
+
+  return sizeReferences.reduce((closest, reference) => {
+    const distance = Math.abs(Math.log(meters / reference.meters));
+    const closestDistance = Math.abs(Math.log(meters / closest.meters));
+    return distance < closestDistance ? reference : closest;
+  });
+}
+
 export default function App() {
   const [feet, setFeet] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const closestObject = result ? findClosestObject(result.meters) : null;
 
   async function convert(value = feet) {
     const normalizedValue = String(value).trim().replace(',', '.');
@@ -172,6 +204,51 @@ export default function App() {
                   <Typography variant="h3" fontWeight={800} color="primary.main">
                     {numberFormatter.format(result.meters)} m
                   </Typography>
+
+                  {closestObject && (
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={2}
+                      alignItems="center"
+                      textAlign={{ xs: 'center', sm: 'left' }}
+                      sx={{
+                        mt: 3,
+                        pt: 3,
+                        borderTop: '1px solid',
+                        borderColor: 'rgba(49, 85, 217, .16)',
+                      }}
+                    >
+                      <Box
+                        aria-hidden="true"
+                        sx={{
+                          width: 72,
+                          height: 72,
+                          flexShrink: 0,
+                          display: 'grid',
+                          placeItems: 'center',
+                          borderRadius: 3,
+                          bgcolor: 'background.paper',
+                          fontSize: 42,
+                          boxShadow: '0 8px 24px rgba(28, 39, 76, .08)',
+                        }}
+                      >
+                        {closestObject.emoji}
+                      </Box>
+                      <Box>
+                        <Typography variant="overline" color="secondary.main" fontWeight={800}>
+                          Objet de taille similaire
+                        </Typography>
+                        <Typography variant="h6" fontWeight={800}>
+                          {closestObject.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Sa {closestObject.dimension} est d’environ{' '}
+                          {comparisonFormatter.format(closestObject.meters)} m. Votre mesure équivaut à{' '}
+                          {comparisonFormatter.format(result.meters / closestObject.meters)} fois cette taille.
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  )}
                 </Box>
               )}
 
@@ -201,4 +278,3 @@ export default function App() {
     </Box>
   );
 }
-
